@@ -1,16 +1,27 @@
 #problem-set-03
 
 # no other imports needed
-from collections import defaultdict
 import math
-#
+from collections import defaultdict
+
 
 ### PART 1: SEARCHING UNSORTED LISTS
 
-# search an unordered list L for a key x using iterate
 def isearch(L, x):
-    ###TODO
-    ###
+    """ Search an unordered list L for a key x using iterate """
+
+    # Sort the list: (in-place)
+    # L.sort()
+
+    def _equal(x,y): 
+        if x==y: return True 
+        else: return x
+
+    # The messy way I wrote this is to return "True" when it's a match
+    # Otherwise it is an int. Therefore we can return true when the type is bool
+    if isinstance(iterate(_equal, x, L), bool): return True
+    else: return False
+
 
 def test_isearch():
     assert isearch([1, 3, 5, 4, 2, 9, 7], 2) == (2 in [1, 3, 5, 4, 2, 9, 7])
@@ -21,15 +32,28 @@ def test_isearch():
 
 def iterate(f, x, a):
     # done. do not change me.
+    print('iterate: calling %s x=%s a=%s' % (f.__name__, x, a))
     if len(a) == 0:
         return x
     else:
         return iterate(f, f(x, a[0]), a[1:])
+    
 
-# search an unordered list L for a key x using reduce
 def rsearch(L, x):
-    ###TODO
-    ###
+    """ Search an unordered list L for a key x using reduce """
+
+    print(f"Scanning list {L} for item {x}")
+
+    def _equal(right, left):
+        if isinstance(right,bool) or isinstance(left,bool): return True
+        elif right==x or left==x: return True
+        else: return right
+
+    # The messy way I wrote this is to return "True" when it's a match
+    # Otherwise it is an int. Therefore we can return true when the type is bool
+    if isinstance(reduce(_equal, 0, L), bool): return True
+    else: return False
+
 
 def test_rsearch():
     assert rsearch([1, 3, 5, 4, 2, 9, 7], 2) == (2 in [1, 3, 5, 4, 2, 9, 7])
@@ -37,8 +61,9 @@ def test_rsearch():
     assert rsearch([1, 3, 5, 2, 9, 7], 99) == (99 in [1, 3, 5, 2, 9, 7])
     assert rsearch([], 2) == (2 in [1, 3, 5])
 
+
 def reduce(f, id_, a):
-    print(a)
+    print('a=%s' % (a))
     # done. do not change me.
     if len(a) == 0:
         return id_
@@ -49,6 +74,7 @@ def reduce(f, id_, a):
         res = f(reduce(f, id_, a[:len(a)//2]),
                  reduce(f, id_, a[len(a)//2:]))
         return res
+    
 
 def ureduce(f, id_, a):
     if len(a) == 0:
@@ -66,6 +92,7 @@ def ureduce(f, id_, a):
 ### PART 3: PARENTHESES MATCHING
 
 #### Iterative solution
+
 def parens_match_iterative(mylist):
     """
     Implement the iterative solution to the parens matching problem.
@@ -84,7 +111,6 @@ def parens_match_iterative(mylist):
     """
     ### TODO
     return iterate(parens_update, 0, mylist) == 0
-    ###
 
 
 def parens_update(current_output, next_input):
@@ -99,8 +125,18 @@ def parens_update(current_output, next_input):
     Returns:
       the updated value of `current_output`
     """
-    ###TODO
-    ###
+    current_char = next_input[0]
+
+    if current_char == "(":
+        current_output = current_output+1
+    elif current_char == ")":
+        current_output = current_output-1
+    else:
+        current_output = current_output
+    if current_output < 0: # If we are ever in the negative, that means our string has too many closing brackets and could never be valid, even if we do have equal numbers of opens/closes.
+        current_output = 10000 # Quick dumb way to make sure that such sequences must fail
+
+    return current_output
 
 
 def test_parens_match_iterative():
@@ -133,8 +169,18 @@ def parens_match_scan(mylist):
     False
     
     """
-    ###TODO
-    ###
+
+    # Map the chars using the provided mapping:
+    mylist = list(map(paren_map, mylist))
+
+    # Scan and keep track of summed prefixes:
+    prefix_list, output = scan(lambda x,y: x+y, 0, mylist)
+
+    # Find min of prefix list to make sure that we cover the same edge case as before, we should never be negative
+    min_prefixes = reduce(min_f, 0, prefix_list)
+
+    return (min_prefixes >= 0) and (output==0)
+
 
 def scan(f, id_, a):
     """
@@ -147,6 +193,7 @@ def scan(f, id_, a):
             [reduce(f, id_, a[:i+1]) for i in range(len(a))],
              reduce(f, id_, a)
            )
+
 
 def paren_map(x):
     """
@@ -170,6 +217,7 @@ def paren_map(x):
     else:
         return 0
 
+
 def min_f(x,y):
     """
     Returns the min of x and y. Useful for `parens_match_scan`.
@@ -177,6 +225,7 @@ def min_f(x,y):
     if x < y:
         return x
     return y
+
 
 def test_parens_match_scan():
     assert parens_match_scan(['(', ')']) == True
@@ -188,7 +237,18 @@ def test_parens_match_scan():
     assert parens_match_scan(['(', 'a', ')', ')', '(']) == False
     assert parens_match_scan([]) == True
 
+
+
 #### Divide and conquer solution
+
+def base_case(x):
+    if x == '(':
+        return (0,1)
+    elif x == ')':
+        return (1,0)
+    else:
+        return (0,0)
+
 
 def parens_match_dc(mylist):
     """
@@ -202,6 +262,7 @@ def parens_match_dc(mylist):
     n_unmatched_left, n_unmatched_right = parens_match_dc_helper(mylist)
     return n_unmatched_left==0 and n_unmatched_right==0
 
+
 def parens_match_dc_helper(mylist):
     """
     Recursive, divide and conquer solution to the parens match problem.
@@ -211,16 +272,20 @@ def parens_match_dc_helper(mylist):
       L is the number of unmatched left parentheses. This output is used by 
       parens_match_dc to return the final True or False value
     """
-    ###TODO
     # base cases
-    
-    # recursive case
-    # - first solve subproblems
-    
+    if len(mylist) == 1:
+        return base_case(mylist[0])
+    elif len(mylist) == 0:
+        return (0,0)
+
     # - then compute the solution (R,L) using these solutions, in constant time.
-    
-    ###
-    
+    else:
+        R1, L1 = parens_match_dc_helper(mylist[:len(mylist)//2])
+        R2, L2 = parens_match_dc_helper(mylist[len(mylist)//2:])
+        
+        m = min(L1, R2)
+        return (R1 + (R2 - m), L2 + (L1 - m))
+
 
 def test_parens_match_dc():
     assert parens_match_dc(['(', ')']) == True
@@ -231,3 +296,4 @@ def test_parens_match_dc():
     assert parens_match_dc(['(', '(', ')']) == False
     assert parens_match_dc(['(', 'a', ')', ')', '(']) == False
     assert parens_match_dc([]) == True 
+
